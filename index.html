@@ -1,0 +1,355 @@
+<html>
+<head>
+    <title>puzzle game</title>
+    <script src="jquery.min.js"></script>
+    <!-- <link rel="stylesheet" type="text/css" href="jquery-ui.min.css"> -->
+    <script src="jquery-ui.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="bootstrap.min.css">
+    <script src="bootstrap.min.js"></script>
+</head>
+<body style="overflow-x:hidden; overflow-y:hidden">
+    <div style="position: absolute; top: 140px; left: 420px">
+    <button id="b1" type="button" class="btn btn-default">new game</button>
+    <button id="b2" type="button" class="btn btn-default">show picture</button>
+    <div class="btn-group">
+        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+          game set
+          <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+          <li><a>3</a></li>
+          <li><a>4</a></li>
+          <li><a>5</a></li>
+          <li><a>6</a></li>
+        </ul>
+    </div>
+    </div>
+    
+    <div id="full" style="position: absolute; padding: 0px; display:none">
+        <img style="position: absolute; margin: 0px; clip: rect(0, 360, 360, 0);" src="pic.jpg" ></img>
+    </div>
+    
+    <!-- Ä£Ì¬¿ò£¨Modal£© -->
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" 
+       aria-labelledby="myModalLabel" aria-hidden="true">
+       <div class="modal-dialog">
+          <div class="modal-content">
+             <div class="modal-header">
+                <button type="button" class="close" 
+                   data-dismiss="modal" aria-hidden="true">
+                      &times;
+                </button>
+                <h4 class="modal-title" id="myModalLabel">
+                   Congratulations
+                </h4>
+             </div>
+             <div class="modal-body">
+                You win
+             </div>
+             <div class="modal-footer">
+                <button type="button" class="btn btn-default" 
+                   data-dismiss="modal">close
+                </button>
+                <button id="b3" type="button" class="btn btn-primary">
+                   restart
+                </button>
+             </div>
+          </div><!-- /.modal-content -->
+    </div><!-- /.modal -->
+    
+<body>
+
+</html>
+
+<script>
+
+function blockString(sideLength, idx, idy) {
+    var top = idx * sideLength;
+    var right = (idy + 1) * sideLength;
+    var buttom = (idx + 1) * sideLength;
+    var left = idy * sideLength;
+    return '<div class="block" id="block_'+idx+'_'+idy+'" style="position: absolute; width:'+sideLength+'px; height:'+sideLength+'px; \
+                display: block; border: 1px solid #f00; margin: -1px; padding: 0px"> \
+                <img style="height:360px; position: absolute; clip: rect('+top+', '+right+', '+buttom+', '+left+');  \
+                     margin-left: -'+left+'; margin-top: -'+top+'" src="pic.jpg"></img> \
+            </div>';
+}
+
+function getId(block) {
+    var id = block.attr("id");
+    var d = id.substring(id.indexOf("_") + 1);
+    var sp = d.indexOf("_");
+    var x = parseInt(d.substring(0, sp));
+    var y = parseInt(d.substring(sp + 1));
+    return {x: x, y: y};
+}
+
+function getBlock(idx, idy) {
+    return $("#block_" + idx + "_" + idy);
+}
+
+function setPosition(block, xpx, ypx) {
+    block.css("top", xpx);
+    block.css("left", ypx)
+}
+
+function getPosition(sideLength, indexx, indexy) {
+    var basePosition = {x: 200, y: 400};
+    return {
+        x: basePosition.x + indexx * sideLength,
+        y: basePosition.y + indexy * sideLength
+    }
+}
+
+function moveToIndex(block, sideLength, indexx, indexy, militime, fun) {
+    var position = getPosition(sideLength, indexx, indexy);
+    block.animate({top: position.x, left: position.y}, 300, fun);
+}
+
+function setZIndex(card, value) {
+    card.css("z-index", "" + value);
+}
+
+function closeTo(block, pts, number, delta) {
+    var top = block.css("top");
+    var left = block.css("left");
+    top = top.indexOf("px") === -1? parseInt(top): parseInt(top.substring(0, top.indexOf("px")));
+    left = left.indexOf("px") === -1? parseInt(left): parseInt(left.substring(0, left.indexOf("px")));
+    for(var i = 0; i < number; i++) {
+        for(var j = 0; j < number; j++) {
+            var deltax = pts[i * number + j].x - top;
+            var deltay = pts[i * number + j].y - left;
+            if(Math.abs(deltax) <= delta && Math.abs(deltay) <= delta)
+                return {x: i, y: j};
+        }
+    }
+    return null;
+}
+
+function outofRange(block, sideLength, number) {
+    var zeroRange = getPosition(sideLength, 0, 0);
+    var minTop = zeroRange.x - 60, minLeft = zeroRange.y - 60;
+    var lstRange = getPosition(sideLength, number - 1, number - 1);
+    var maxTop = lstRange.x + sideLength + 60, maxLeft = lstRange.y + sideLength + 60;
+    var top = block.css("top");
+    var left = block.css("left");
+    top = top.indexOf("px") === -1? parseInt(top): parseInt(top.substring(0, top.indexOf("px")));
+    left = left.indexOf("px") === -1? parseInt(left): parseInt(left.substring(0, left.indexOf("px")));
+    var inRange = (top >= minTop && top <= maxTop) && (left >= minLeft && left <= maxLeft);
+    return !inRange;
+}
+
+var body = $("body");
+var allLength = 360;
+var number = 4, sideLength = allLength / number;
+var end = false;
+
+var attributes = new Array(number * number);
+var pts = new Array(number * number);
+
+function findByPosition(indexx, indexy) {
+    for(var i = 0; i < number; i++) {
+        for(var j = 0; j < number; j++) {
+            if(attributes[i * number + j].indexx === indexx && attributes[i * number + j].indexy === indexy)
+                return {x: i, y: j};
+        }
+    }
+    return null;
+}
+
+function getAttributes(idx, idy) {
+    return attributes[idx * number + idy];
+}
+
+function check() {
+    for(var i = 0; i < number; i++)
+        for(var j = 0; j < number; j++)
+            if(i !== attributes[i * number + j].indexx || j !== attributes[i * number + j].indexy)
+                return false;
+    return true;
+}
+
+function checkWin() {
+    if(check()) {
+        end = true;
+        $('#myModal').modal('show');
+    }
+}
+
+var closePt = null;
+var temp = null;
+var thisPosition = null
+
+$(document).ready(function() {
+    uiInit();
+    start();
+});
+
+function restart(n) {
+    if(n != null) number = n;
+    sideLength = allLength / number;
+    end = false;
+    
+    attributes = new Array(number * number);
+    pts = new Array(number * number);
+    
+    closePt = null;
+    temp = null;
+    thisPosition = null;
+    
+    $("div.block").remove();
+    start();
+}
+
+function shuffle(arr) {
+    for(var t = 0; t < 10000; t++) {
+        var i = Math.floor(Math.random() * arr.length);
+        i = parseInt(i);
+        var j = Math.floor(Math.random() * arr.length);
+        j = parseInt(j);
+        var tp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = tp;
+    }
+}
+
+function start() {
+
+    // init attribute
+    var tpArr = [];
+    for(var i = 0; i < number * number; i++)
+        tpArr.push(i);
+    shuffle(tpArr);
+    for(var i = 0; i < number; i++) {
+        for(var j = 0; j < number; j++) {
+            var pos = getPosition(sideLength, i, j);
+            attributes[i * number + j] = {
+                indexx: parseInt(tpArr[i * number + j] / number),
+                indexy: tpArr[i * number + j] % number,
+                posx: pos.x,
+                posy: pos.y,
+                clicked: false
+            }
+            pts[i * number + j] = pos;
+        }
+    }
+
+    // init listeners
+    for(var i = 0; i < number; i++) {
+        for(var j = 0; j < number; j++) {
+            var block = $(blockString(sideLength, i, j));
+            block.css("box-sizing", "content-box");
+            setZIndex(block, 3);
+            body.append(block);
+            var position = getPosition(sideLength, attributes[i * number + j].indexx, attributes[i * number + j].indexy);
+            setPosition(block, position.x, position.y);
+            block.draggable({
+                scroll: false,
+                start: function() {
+                    var block = $(this);
+                    var id = getId(block);
+                    setZIndex(block, 4);
+                    thisPosition = {x: attributes[id.x * number + id.y].indexx, y: attributes[id.x * number + id.y].indexy};
+                    temp = null;
+                },
+                drag: function() {
+                    if(end) return;
+                    var block = $(this);
+                    var id = getId(block);
+                    attributes[id.x * number + id.y].indexx = -1;
+                    attributes[id.x * number + id.y].indexy = -1;
+                    closePt = closeTo(block, pts, number, 20);
+                    var origin = findByPosition(thisPosition.x, thisPosition.y);
+                    if(closePt !== null) {
+                        if((closePt.x !== thisPosition.x || closePt.y !== thisPosition.y) && origin === null && temp === null) {
+                            var currentBlockId = findByPosition(closePt.x, closePt.y);
+                            moveToIndex(getBlock(currentBlockId.x, currentBlockId.y), sideLength, thisPosition.x, thisPosition.y, 500);
+                            attributes[currentBlockId.x * number + currentBlockId.y].indexx = thisPosition.x;
+                            attributes[currentBlockId.x * number + currentBlockId.y].indexy = thisPosition.y;
+                            temp = {x: closePt.x, y: closePt.y};
+                        }
+                        if((closePt.x !== thisPosition.x || closePt.y !== thisPosition.y) && origin !== null && temp !== null) {
+                            var currentBlockId = findByPosition(closePt.x, closePt.y);
+                            if(currentBlockId != null) {
+                                moveToIndex(getBlock(currentBlockId.x, currentBlockId.y), sideLength, thisPosition.x, thisPosition.y, 500);
+                                attributes[currentBlockId.x * number + currentBlockId.y].indexx = thisPosition.x;
+                                attributes[currentBlockId.x * number + currentBlockId.y].indexy = thisPosition.y;
+                                
+                                moveToIndex(getBlock(origin.x, origin.y), sideLength, temp.x, temp.y, 500);
+                                attributes[origin.x * number + origin.y].indexx = temp.x;
+                                attributes[origin.x * number + origin.y].indexy = temp.y;
+                            }
+                            temp = {x: closePt.x, y: closePt.y};
+                        }
+                        if(closePt.x === thisPosition.x && closePt.y === thisPosition.y && origin !== null) {
+                            moveToIndex(getBlock(origin.x, origin.y), sideLength, temp.x, temp.y, 500);
+                            attributes[origin.x * number + origin.y].indexx = temp.x;
+                            attributes[origin.x * number + origin.y].indexy = temp.y;
+                            temp = null;
+                        }
+                    } else if(outofRange(block, sideLength, number) && temp !== null) {
+                        moveToIndex(getBlock(origin.x, origin.y), sideLength, temp.x, temp.y, 500);
+                        attributes[origin.x * number + origin.y].indexx = temp.x;
+                        attributes[origin.x * number + origin.y].indexy = temp.y;
+                        temp = null;
+                    }
+                },
+                stop: function() {
+                    var block = $(this);
+                    var id = getId(block);
+                    if(temp === null) {
+                        moveToIndex(block, sideLength, thisPosition.x, thisPosition.y, 500, function() {setZIndex(block, 3); if(!end) checkWin();});
+                        attributes[id.x * number + id.y].indexx = thisPosition.x;
+                        attributes[id.x * number + id.y].indexy = thisPosition.y;
+                    } else {
+                        moveToIndex(block, sideLength, temp.x, temp.y, 500, function() {setZIndex(block, 3); if(!end) checkWin();});
+                        attributes[id.x * number + id.y].indexx = temp.x;
+                        attributes[id.x * number + id.y].indexy = temp.y;
+                    }
+                }
+            });
+        }
+    }
+};
+
+
+function uiInit() {
+
+    var full = $("#full");
+    var zeroRange = getPosition(0, 0, 0);
+    full.css("top", zeroRange.x);
+    full.css("left", zeroRange.y);
+    full.children().css("height", allLength);
+    full.children().css('clip', 'rect(0, '+10+', '+10+', ' + '0);');
+    full.css("z-index", "10");
+    full.hide();
+    
+    $("#b1").click(function() {
+        restart();
+    });
+    
+    $("#b3").click(function() {
+        console.log("b3b3");
+        $('#myModal').modal('hide');
+        restart();
+    });
+    
+    $("#b2").bind("mousedown", function() {
+        full.fadeIn();
+    });
+    $("#b2").bind("mouseup", function() {
+        full.fadeOut();
+    });
+    $("#b2").bind("mouseout", function() {
+        full.fadeOut();
+    });
+    
+    $("ul a").click(function() {
+        var n = $(this).html();
+        restart(parseInt(n));
+    });
+    
+    $("ul a").hover(function(){$(this).css("cursor","pointer");}, function(){$(this).css("cursor","default");});
+}
+
+</script>
