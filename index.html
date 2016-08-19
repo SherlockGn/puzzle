@@ -1,20 +1,26 @@
 <html>
 <head>
     <title>puzzle game</title>
+    
     <script src="jquery.min.js"></script>
+    
     <!-- <link rel="stylesheet" type="text/css" href="jquery-ui.min.css"> -->
-    <script src="jquery-ui.min.js"></script>
+    <script src="jquery-ui.min.js"></script>   <!-- draggable of juquery-ui is used -->
+    
     <link rel="stylesheet" type="text/css" href="bootstrap.min.css">
     <script src="bootstrap.min.js"></script>
 </head>
+
 <body style="overflow-x:hidden; overflow-y:hidden">
+    
+    <!-- These are three buttons -->
     <div style="position: absolute; top: 140px; left: 420px">
     <button id="b1" type="button" class="btn btn-default">new game</button>
     <button id="b2" type="button" class="btn btn-default">show picture</button>
     <div class="btn-group">
         <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
           game set
-          <span class="caret"></span>
+        <span class="caret"></span>
         </button>
         <ul class="dropdown-menu">
           <li><a>3</a></li>
@@ -25,38 +31,33 @@
     </div>
     </div>
     
+    <!-- this div shows the full picture (answer of puzzle) -->
     <div id="full" style="position: absolute; padding: 0px; display:none">
         <img style="position: absolute; margin: 0px; clip: rect(0, 360, 360, 0);" src="pic.jpg" ></img>
     </div>
     
-    <!-- Ä£Ì¬¿ò£¨Modal£© -->
-    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" 
-       aria-labelledby="myModalLabel" aria-hidden="true">
-       <div class="modal-dialog">
-          <div class="modal-content">
-             <div class="modal-header">
-                <button type="button" class="close" 
-                   data-dismiss="modal" aria-hidden="true">
-                      &times;
-                </button>
-                <h4 class="modal-title" id="myModalLabel">
-                   Congratulations
-                </h4>
-             </div>
-             <div class="modal-body">
-                You win
-             </div>
-             <div class="modal-footer">
-                <button type="button" class="btn btn-default" 
-                   data-dismiss="modal">close
-                </button>
-                <button id="b3" type="button" class="btn btn-primary">
-                   restart
-                </button>
-             </div>
-          </div><!-- /.modal-content -->
+    <!-- model of bootstrap -->
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                        &times;
+                    </button>
+                    <h4 class="modal-title" id="myModalLabel">Congratulations</h4>
+                </div>
+                <div class="modal-body">You win</div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" 
+                        data-dismiss="modal">close
+                    </button>
+                    <button id="b3" type="button" class="btn btn-primary">
+                        restart
+                    </button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
     </div><!-- /.modal -->
-    
 <body>
 
 </html>
@@ -75,6 +76,7 @@ function blockString(sideLength, idx, idy) {
             </div>';
 }
 
+/* achieve id of block instance(div) */
 function getId(block) {
     var id = block.attr("id");
     var d = id.substring(id.indexOf("_") + 1);
@@ -84,6 +86,7 @@ function getId(block) {
     return {x: x, y: y};
 }
 
+/* achieve block instance(div) when knowing id (including idx & idy) */
 function getBlock(idx, idy) {
     return $("#block_" + idx + "_" + idy);
 }
@@ -110,6 +113,7 @@ function setZIndex(card, value) {
     card.css("z-index", "" + value);
 }
 
+/* judge if the block is close to an other block */
 function closeTo(block, pts, number, delta) {
     var top = block.css("top");
     var left = block.css("left");
@@ -126,6 +130,7 @@ function closeTo(block, pts, number, delta) {
     return null;
 }
 
+/* judge if the block is far out of game scene (60px away from scene) */
 function outofRange(block, sideLength, number) {
     var zeroRange = getPosition(sideLength, 0, 0);
     var minTop = zeroRange.x - 60, minLeft = zeroRange.y - 60;
@@ -145,6 +150,7 @@ var number = 4, sideLength = allLength / number;
 var end = false;
 
 var attributes = new Array(number * number);
+/* const array, storing left-top coordinates */
 var pts = new Array(number * number);
 
 function findByPosition(indexx, indexy) {
