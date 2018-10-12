@@ -13,8 +13,16 @@
 
 <body style="overflow-x:hidden; overflow-y:hidden">
     
+    
+    
     <!-- These are three buttons -->
     <div style="position: absolute; top: 140px; left: 420px">
+    <div class="col-md-6 column">
+        <p id="p_count_id"></p>
+    </div>
+    <div class="col-md-6 column">
+        <p id="p_time_id"></p>
+    </div>
     <button id="b1" type="button" class="btn btn-default">new game</button>
     <button id="b2" type="button" class="btn btn-default">show picture</button>
     <div class="btn-group">
@@ -46,7 +54,7 @@
                     </button>
                     <h4 class="modal-title" id="myModalLabel">Congratulations</h4>
                 </div>
-                <div class="modal-body">You win</div>
+                <div class="modal-body">You win<br>Count: <br>Time: </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" 
                         data-dismiss="modal">close
@@ -97,7 +105,7 @@ function setPosition(block, xpx, ypx) {
 }
 
 function getPosition(sideLength, indexx, indexy) {
-    var basePosition = {x: 200, y: 400};
+    var basePosition = {x: 220, y: 400};
     return {
         x: basePosition.x + indexx * sideLength,
         y: basePosition.y + indexy * sideLength
@@ -179,6 +187,9 @@ function checkWin() {
     if(check()) {
         end = true;
         $('#myModal').modal('show');
+        $('.modal-body').html("You win<br>" +
+            $("#p_count_id").html() + "<br>" +
+            $("#p_time_id").html());
     }
 }
 
@@ -189,6 +200,7 @@ var thisPosition = null
 $(document).ready(function() {
     uiInit();
     start();
+    startTimeThread();
 });
 
 function restart(n) {
@@ -204,6 +216,7 @@ function restart(n) {
     thisPosition = null;
     
     $("div.block").remove();
+    
     start();
 }
 
@@ -220,6 +233,10 @@ function shuffle(arr) {
 }
 
 function start() {
+
+    // init count and time
+    $("#p_count_id").html("Count: 0");
+    $("#p_time_id").html("Time: 00:00:00:0");
 
     // init attribute
     var tpArr = [];
@@ -311,6 +328,9 @@ function start() {
                         moveToIndex(block, sideLength, temp.x, temp.y, 500, function() {setZIndex(block, 3); if(!end) checkWin();});
                         attributes[id.x * number + id.y].indexx = temp.x;
                         attributes[id.x * number + id.y].indexy = temp.y;
+                        
+                        var count = parseInt($("#p_count_id").html().substring("Count: ".length));
+                        $("#p_count_id").html("Count: " + (count + 1));
                     }
                 }
             });
@@ -357,5 +377,40 @@ function uiInit() {
     
     $("ul a").hover(function(){$(this).css("cursor","pointer");}, function(){$(this).css("cursor","default");});
 }
+
+function startTimeThread() {
+    var time = $("#p_time_id").html().substring("Time: ".length);
+    var h = parseInt(time.substring(0, 2));
+    var m = parseInt(time.substring(3, 5));
+    var s = parseInt(time.substring(6, 8));
+    var ms = parseInt(time.substring(9, 10));
+    
+    ms++;
+    if(ms == 10) {
+        ms = 0;
+        s++;
+    }
+    if(s == 60) {
+        s = 0;
+        m++;
+    }
+    if(m == 60) {
+        m = 0;
+        h++;
+    }
+    if(h == 100) {
+        h = 0;
+    }
+    
+    var updated = "Time: " + 
+        (h < 10 ? "0" : "") + h + ":" +
+        (m < 10 ? "0" : "") + m + ":" +
+        (s < 10 ? "0" : "") + s + ":" +
+        ms;
+    $("#p_time_id").html(updated);
+    
+    setTimeout(startTimeThread, 100);
+}
+
 
 </script>
